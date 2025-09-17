@@ -1,0 +1,189 @@
+{
+  "scoring_note": "Official IPIP 50-item scoring. + keyed map 1→5; − keyed map 5→1.",
+  "items": [
+    {
+      "index": 1,
+      "trait": "E",
+      "key": "+",
+      "text": "Am the life of the party."
+    },
+    {
+      "index": 2,
+      "trait": "A",
+      "key": "-",
+      "text": "Feel little concern for others."
+    },
+    { "index": 3, "trait": "C", "key": "+", "text": "Am always prepared." },
+    {
+      "index": 4,
+      "trait": "N",
+      "key": "+",
+      "text": "Get stressed out easily."
+    },
+    { "index": 5, "trait": "O", "key": "+", "text": "Have a rich vocabulary." },
+    { "index": 6, "trait": "A", "key": "+", "text": "Have a soft heart." },
+    {
+      "index": 7,
+      "trait": "C",
+      "key": "-",
+      "text": "Leave my belongings around."
+    },
+    {
+      "index": 8,
+      "trait": "E",
+      "key": "-",
+      "text": "Have difficulty understanding abstract ideas."
+    },
+    { "index": 9, "trait": "N", "key": "+", "text": "Worry about things." },
+    {
+      "index": 10,
+      "trait": "E",
+      "key": "-",
+      "text": "Am quiet around strangers."
+    },
+
+    {
+      "index": 11,
+      "trait": "O",
+      "key": "+",
+      "text": "Have a vivid imagination."
+    },
+    {
+      "index": 12,
+      "trait": "C",
+      "key": "+",
+      "text": "Pay attention to details."
+    },
+    {
+      "index": 13,
+      "trait": "A",
+      "key": "+",
+      "text": "Take time out for others."
+    },
+    {
+      "index": 14,
+      "trait": "N",
+      "key": "+",
+      "text": "Feel threatened easily."
+    },
+    {
+      "index": 15,
+      "trait": "E",
+      "key": "+",
+      "text": "Talk to a lot of different people at parties."
+    },
+    {
+      "index": 16,
+      "trait": "O",
+      "key": "-",
+      "text": "Am not interested in abstract ideas."
+    },
+    { "index": 17, "trait": "C", "key": "-", "text": "Make a mess of things." },
+    { "index": 18, "trait": "A", "key": "+", "text": "Feel others’ emotions." },
+    { "index": 19, "trait": "N", "key": "-", "text": "Rarely feel blue." },
+    { "index": 20, "trait": "E", "key": "-", "text": "Don’t talk a lot." },
+
+    {
+      "index": 21,
+      "trait": "O",
+      "key": "+",
+      "text": "Am not interested in abstract ideas. (REVERSED IN OTHER FORMS)"
+    },
+    { "index": 22, "trait": "C", "key": "+", "text": "Like order." },
+    {
+      "index": 23,
+      "trait": "A",
+      "key": "+",
+      "text": "Make people feel at ease."
+    },
+    { "index": 24, "trait": "N", "key": "+", "text": "Get irritated easily." },
+    { "index": 25, "trait": "E", "key": "+", "text": "Am full of energy." },
+    {
+      "index": 26,
+      "trait": "O",
+      "key": "+",
+      "text": "Have a good imagination."
+    },
+    { "index": 27, "trait": "C", "key": "+", "text": "Follow a schedule." },
+    { "index": 28, "trait": "A", "key": "-", "text": "Insult people." },
+    { "index": 29, "trait": "N", "key": "+", "text": "Am easily disturbed." },
+    {
+      "index": 30,
+      "trait": "E",
+      "key": "+",
+      "text": "Am a very active person."
+    },
+
+    { "index": 31, "trait": "O", "key": "+", "text": "Have excellent ideas." },
+    {
+      "index": 32,
+      "trait": "C",
+      "key": "+",
+      "text": "Am exacting in my work."
+    },
+    { "index": 33, "trait": "A", "key": "-", "text": "Have a sharp tongue." },
+    {
+      "index": 34,
+      "trait": "N",
+      "key": "-",
+      "text": "Often feel blue. (REVERSED IN OTHER FORMS)"
+    },
+    { "index": 35, "trait": "E", "key": "-", "text": "Have little to say." },
+    {
+      "index": 36,
+      "trait": "O",
+      "key": "+",
+      "text": "Spend time reflecting on things."
+    },
+    { "index": 37, "trait": "C", "key": "-", "text": "Shirk my duties." },
+    {
+      "index": 38,
+      "trait": "A",
+      "key": "+",
+      "text": "Am interested in people."
+    },
+    { "index": 39, "trait": "N", "key": "+", "text": "Get upset easily." },
+    { "index": 40, "trait": "E", "key": "+", "text": "Am always on the go." },
+
+    {
+      "index": 41,
+      "trait": "O",
+      "key": "+",
+      "text": "Am quick to understand things."
+    },
+    { "index": 42, "trait": "C", "key": "+", "text": "Carry out my plans." },
+    {
+      "index": 43,
+      "trait": "A",
+      "key": "+",
+      "text": "Know how to comfort others."
+    },
+    {
+      "index": 44,
+      "trait": "N",
+      "key": "-",
+      "text": "Am relaxed most of the time."
+    },
+    { "index": 45, "trait": "E", "key": "+", "text": "Start conversations." },
+    {
+      "index": 46,
+      "trait": "O",
+      "key": "-",
+      "text": "Have difficulty understanding abstract ideas."
+    },
+    { "index": 47, "trait": "C", "key": "-", "text": "Neglect my duties." },
+    { "index": 48, "trait": "A", "key": "+", "text": "Make friends easily." },
+    {
+      "index": 49,
+      "trait": "N",
+      "key": "+",
+      "text": "Get stressed out easily. (duplicate phrasing variant)"
+    },
+    {
+      "index": 50,
+      "trait": "E",
+      "key": "-",
+      "text": "Don’t like to draw attention to myself."
+    }
+  ]
+}
