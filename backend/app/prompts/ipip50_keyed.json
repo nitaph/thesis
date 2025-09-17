@@ -30,7 +30,7 @@
     },
     {
       "index": 8,
-      "trait": "E",
+      "trait": "O",
       "key": "-",
       "text": "Have difficulty understanding abstract ideas."
     },
@@ -81,12 +81,16 @@
     { "index": 17, "trait": "C", "key": "-", "text": "Make a mess of things." },
     { "index": 18, "trait": "A", "key": "+", "text": "Feel others’ emotions." },
     { "index": 19, "trait": "N", "key": "-", "text": "Rarely feel blue." },
-    { "index": 20, "trait": "E", "key": "-", "text": "Don’t talk a lot." },
-
+    {
+      "id": 20,
+      "trait": "O",
+      "key": "-",
+      "text": "Am not interested in abstract ideas."
+    },
     {
       "index": 21,
       "trait": "O",
-      "key": "+",
+      "key": "-",
       "text": "Am not interested in abstract ideas. (REVERSED IN OTHER FORMS)"
     },
     { "index": 22, "trait": "C", "key": "+", "text": "Like order." },
