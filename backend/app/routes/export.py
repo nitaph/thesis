@@ -37,8 +37,21 @@ async def export_generations(session: AsyncSession = Depends(get_session)):
         CachedResponse.text,
     ).order_by(CachedResponse.id)
     rows = (await session.execute(q)).all()
-    header = ["participant_id","task_id","condition","response_id","model",
-              "tokens_in","tokens_out","latency_ms","created_at","prompt_text","text"]
+    header = [
+        "participant_id",
+        "task_id",
+        "condition",
+        "response_id",
+        "model",
+        "tokens_in",
+        "tokens_out",
+        "latency_ms",
+        "created_at",
+        "system_prompt",
+        "user_prompt",
+        "prompt_text",
+        "text",
+    ]
     return StreamingResponse(_to_csv(rows, header),
         media_type="text/csv",
         headers={"Content-Disposition": "attachment; filename=generations.csv"}

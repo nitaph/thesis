@@ -1,4 +1,4 @@
-participant_id,task_id,condition,response_id,model,tokens_in,tokens_out,latency_ms,created_at,prompt_text,text
+participant_id,task_id,condition,response_id,model,tokens_in,tokens_out,latency_ms,created_at,system_prompt,user_prompt,prompt_text,text
 dev-user-1,A7,baseline,1dbbd66e-3629-4a0b-8d2c-1ac422041a32,gpt-4o-mini-2024-07-18,842,287,5515,2025-09-17 12:39:28,"You have the following personality on a fixed 10–50 scale (10 = very low, 50 = very high): 
 Openness: 42; 
 Conscientiousness: 26; 
