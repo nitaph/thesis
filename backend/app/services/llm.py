@@ -1,13 +1,48 @@
 # --- app/services/llm.py ---
-import asyncio, json, uuid
+import os, asyncio, json, uuid
 from typing import Dict, Optional
 from pathlib import Path
+from time import perf_counter
 
-from app.config import settings
-from app.services.cache import Cache
-from app.services.logging_utils import timer_ms
-from app.services.utils import scrub_pii
+# --------- light settings (no DB!) ----------
+class Settings:
+    OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+    LLM_MODEL = os.getenv("LLM_MODEL", "gpt-4o-mini")
+    LLM_TEMPERATURE = float(os.getenv("LLM_TEMPERATURE", "0.7"))
+    LLM_TOP_P = float(os.getenv("LLM_TOP_P", "1.0"))
+    LLM_MAX_TOKENS = int(os.getenv("LLM_MAX_TOKENS", "350"))
+    LLM_SEED = int(os.getenv("LLM_SEED")) if os.getenv("LLM_SEED") else None
+    TIMEOUT_S = int(os.getenv("TIMEOUT_S", "25"))
+    STRIP_PII = os.getenv("STRIP_PII", "false").lower() == "true"
+    CACHE_TTL_S = int(os.getenv("CACHE_TTL_S", "3600"))
+    REDIS_URL = os.getenv("REDIS_URL")  # optional
 
+settings = Settings()
+
+# --------- cache (use your Redis cache if set, else in-memory) ----------
+class _MemCache:
+    def __init__(self): self._d = {}
+    async def get(self, k): return self._d.get(k)
+    async def set(self, k, v): self._d[k] = v
+    def make_key(self, pid, tid, cond): return f"{pid}:{tid}:{cond}"
+
+if settings.REDIS_URL:
+    from app.services.cache import Cache  # your redis impl
+    cache = Cache(settings.REDIS_URL, settings.CACHE_TTL_S)
+else:
+    cache = _MemCache()
+
+# --------- tiny timer (no external utils) ----------
+class timer_ms:
+    def __enter__(self): self.t0 = perf_counter(); return self
+    def __exit__(self, *a): pass
+    def __call__(self): return int((perf_counter() - self.t0) * 1000)
+
+def scrub_pii(text: str) -> str:
+    # keep your own if you prefer; no-op here
+    return text
+
+# --------- OpenAI client ----------
 try:
     from openai import AsyncOpenAI
     _client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY) if settings.OPENAI_API_KEY else None
@@ -16,7 +51,6 @@ except Exception:
 
 PROMPTS_DIR = Path(__file__).resolve().parents[1] / "prompts"
 
-# filenames we expect to exist (use persona.txt for mirror/comp; creative.txt for creative)
 FILES = {
     "A": {
         "baseline": PROMPTS_DIR / "style_a_baseline.txt",
@@ -31,56 +65,27 @@ FILES = {
 }
 
 def _read(path: Path, fallback: str) -> str:
-    try:
-        return path.read_text(encoding="utf-8")
-    except Exception:
-        return fallback
+    try: return path.read_text(encoding="utf-8")
+    except Exception: return fallback
 
 def system_prompt_for(style: str, condition: str) -> str:
-    """
-    style: 'A' | 'B'
-    condition: 'baseline' | 'mirror' | 'comp' | 'creative'
-    """
     group = FILES.get(style.upper())
     if not group:
-        # fallback minimal systems
-        if style.upper() == "A":
-            group = {
-                "baseline": Path(),
-                "persona": Path(),
-                "creative": Path(),
-            }
-            return "Generate 3 concise, distinct ideas. Avoid fluff. Each idea has a bullet and one-sentence why."
-        else:
-            group = {
-                "baseline": Path(),
-                "persona": Path(),
-                "creative": Path(),
-            }
-            return "Produce one well-argued concept: summary (≤50w), 4–6 steps, 2–3 risks, quick test."
+        return "Produce a concise, high-quality answer in the requested style."
     if condition == "creative":
-        return _read(group["creative"],
-                     "Produce creative output: favor unconventional, high-variance ideas; tolerate ambiguity.")
+        return _read(group["creative"], "Favor unconventional, high-variance ideas; tolerate ambiguity.")
     if condition in ("mirror", "comp"):
-        return _read(group["persona"],
-                     "Adopt the given personality (O,C,E,A,N) and respond accordingly.")
-    # baseline
-    return _read(group["baseline"],
-                 "Generate 3 concise, distinct ideas. Avoid fluff. Each idea has a bullet and one-sentence why.")
+        return _read(group["persona"], "Adopt the given personality (O,C,E,A,N) and respond accordingly.")
+    return _read(group["baseline"], "Provide a sensible, neutral, concise answer.")
 
 def persona_block(persona: Dict[str, int], guidance: Optional[str]) -> str:
     block = {"persona": persona}
-    if guidance:
-        block["guidance"] = guidance
+    if guidance: block["guidance"] = guidance
     return json.dumps(block, ensure_ascii=False)
 
 async def _call_openai(system_prompt: str, user_prompt: str) -> dict:
     if _client is None:
-        return {
-            "text": f"[MOCKED]\nSYSTEM:{system_prompt[:120]}...\nUSER:{user_prompt[:160]}...",
-            "model": "mock",
-            "usage": {"prompt_tokens": 0, "completion_tokens": 0},
-        }
+        return {"text": f"[MOCKED]\n{user_prompt[:160]}...", "model": "mock", "usage": {"prompt_tokens": 0, "completion_tokens": 0}}
     resp = await asyncio.wait_for(
         _client.chat.completions.create(
             model=settings.LLM_MODEL,
@@ -88,10 +93,9 @@ async def _call_openai(system_prompt: str, user_prompt: str) -> dict:
             top_p=settings.LLM_TOP_P,
             max_tokens=settings.LLM_MAX_TOKENS,
             seed=settings.LLM_SEED,
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user",   "content": user_prompt},
-            ],
+            messages=[{"role":"system","content":system_prompt},{"role":"user","content":user_prompt}],
+            response_format={"type": "json_object"},
+
         ),
         timeout=settings.TIMEOUT_S,
     )
@@ -106,19 +110,10 @@ async def _call_openai(system_prompt: str, user_prompt: str) -> dict:
         },
     }
 
-cache = Cache(settings.REDIS_URL, settings.CACHE_TTL_S)
-
 CONDITION_ORDER = ["baseline", "mirror", "comp", "creative"]
 
-async def generate_four(
-    personas: list[dict],
-    participant_id: str,
-    task_id: str,
-    style: str,
-    prompt_text: str,
-):
+async def generate_four(personas: list[dict], participant_id: str, task_id: str, style: str, prompt_text: str):
     async def one(cond: str, persona_payload: dict):
-        # compute per-condition system prompt INSIDE the function
         sys_prompt = system_prompt_for(style, cond)
 
         key = cache.make_key(participant_id, task_id, cond)
@@ -127,15 +122,12 @@ async def generate_four(
             data = json.loads(cached)
             return data | {"fromCache": True}
 
-        # persona injection goes into the USER message (baseline => none)
-        pblock = "" if cond == "baseline" else persona_block(
-            persona_payload["persona"], persona_payload.get("guidance")
-        )
+        pblock = "" if cond == "baseline" else persona_block(persona_payload["persona"], persona_payload.get("guidance"))
         user_msg = f"{prompt_text}\n\n{pblock}" if pblock else prompt_text
 
-        with timer_ms() as elapsed:
+        with timer_ms() as t:
             llm = await _call_openai(sys_prompt, user_msg)
-        latency_ms = elapsed()
+        latency_ms = t()
 
         text = scrub_pii(llm["text"]) if settings.STRIP_PII else llm["text"]
         payload = {
@@ -146,7 +138,6 @@ async def generate_four(
             "tokensIn": llm["usage"]["prompt_tokens"],
             "tokensOut": llm["usage"]["completion_tokens"],
             "generationTimeMs": latency_ms,
-            # store prompts so you can export them
             "systemPrompt": sys_prompt,
             "userPrompt": user_msg,
         }
@@ -154,4 +145,4 @@ async def generate_four(
         return payload
 
     tasks = [one(c, p) for c, p in zip(CONDITION_ORDER, personas)]
-    return await asyncio.gather(*tasks, return_exceptions=False)
+    return await asyncio.gather(*tasks)
