@@ -45,7 +45,7 @@ Think through all steps internally, then return ONLY valid JSON. Do not include 
     "newIdea": "string",              // idea that clearly reflects your persona.
     "why": "string"                   // novelty + usefullness framed in your persona’s priorities.
   },
-  "narrative": "string"               // One sentence (40–70 words): I got inspired by {{attribute}} of {{source}} because {{inspired_by.why}} to {{operation}} at {{where_in_idea1}} into {{newIdea}} because {{inspired_to.why}}.
+  "narrative": "string"               // One sentence (MAX 40 words): I got inspired by {{attribute}} of {{source}} because {{inspired_by.why}} to {{operation}} at {{where_in_idea1}} into {{newIdea}} because {{inspired_to.why}}.
 }
 
 Rules:
