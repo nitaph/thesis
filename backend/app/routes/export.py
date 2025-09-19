@@ -4,11 +4,26 @@ from sqlalchemy import select
 from starlette.responses import StreamingResponse
 from io import StringIO
 import csv
+import json
 
 from app.db import get_session
 from app.models import CachedResponse, Rating, Big5Score
 
 router = APIRouter()
+
+def _flatten(value, parent_key="", sep="_"):
+    items = {}
+    if isinstance(value, dict):
+        for key, nested in value.items():
+            new_key = f"{parent_key}{sep}{key}" if parent_key else key
+            items.update(_flatten(nested, new_key, sep))
+    elif isinstance(value, list):
+        for idx, nested in enumerate(value):
+            new_key = f"{parent_key}{sep}{idx}" if parent_key else str(idx)
+            items.update(_flatten(nested, new_key, sep))
+    elif parent_key:
+        items[parent_key] = value
+    return items
 
 def _to_csv(rows, header):
     def gen():
@@ -37,7 +52,7 @@ async def export_generations(session: AsyncSession = Depends(get_session)):
         CachedResponse.text,
     ).order_by(CachedResponse.id)
     rows = (await session.execute(q)).all()
-    header = [
+    base_header = [
         "participant_id",
         "task_id",
         "condition",
@@ -52,7 +67,34 @@ async def export_generations(session: AsyncSession = Depends(get_session)):
         "prompt_text",
         "text",
     ]
-    return StreamingResponse(_to_csv(rows, header),
+    processed_rows = []
+    flattened_keys = []
+    seen_keys = set()
+    for row in rows:
+        row_values = list(row)
+        raw_text = row_values[-1]
+        flattened = {}
+        if raw_text:
+            try:
+                parsed = json.loads(raw_text)
+            except json.JSONDecodeError:
+                parsed = None
+            if isinstance(parsed, (dict, list)):
+                flattened = _flatten(parsed)
+        for key in flattened:
+            if key not in seen_keys:
+                seen_keys.add(key)
+                flattened_keys.append(key)
+        processed_rows.append((row_values, flattened))
+    header = base_header + flattened_keys
+    final_rows = []
+    for row_values, flattened in processed_rows:
+        appended = []
+        for key in flattened_keys:
+            value = flattened.get(key)
+            appended.append("" if value is None else value)
+        final_rows.append(row_values + appended)
+    return StreamingResponse(_to_csv(final_rows, header),
         media_type="text/csv",
         headers={"Content-Disposition": "attachment; filename=generations.csv"}
     )
