@@ -68,20 +68,44 @@ def _read(path: Path, fallback: str) -> str:
     try: return path.read_text(encoding="utf-8")
     except Exception: return fallback
 
-def system_prompt_for(style: str, condition: str) -> str:
+def _inject_persona(system_prompt: str, persona: Optional[Dict[str, int]]) -> str:
+    if not persona:
+        return system_prompt
+
+    if "(dynamic)" in system_prompt:
+        mapping = (
+            ("O", "Openness"),
+            ("C", "Conscientiousness"),
+            ("E", "Extraversion"),
+            ("A", "Agreeableness"),
+            ("N", "Neuroticism"),
+        )
+        for key, label in mapping:
+            value = persona.get(key)
+            if value is None:
+                continue
+            system_prompt = system_prompt.replace(f"{label}: (dynamic);", f"{label}: {value};")
+            system_prompt = system_prompt.replace(f"{label}: (dynamic)", f"{label}: {value}")
+
+    return system_prompt
+
+
+def system_prompt_for(
+    style: str,
+    condition: str,
+    persona: Optional[Dict[str, int]] = None,
+) -> str:
     group = FILES.get(style.upper())
     if not group:
-        return "Produce a concise, high-quality answer in the requested style."
-    if condition == "creative":
-        return _read(group["creative"], "Favor unconventional, high-variance ideas; tolerate ambiguity.")
-    if condition in ("mirror", "comp"):
-        return _read(group["persona"], "Adopt the given personality (O,C,E,A,N) and respond accordingly.")
-    return _read(group["baseline"], "Provide a sensible, neutral, concise answer.")
+        base = "Produce a concise, high-quality answer in the requested style."
+    elif condition == "creative":
+        base = _read(group["creative"], "Favor unconventional, high-variance ideas; tolerate ambiguity.")
+    elif condition in ("mirror", "comp"):
+        base = _read(group["persona"], "Adopt the given personality (O,C,E,A,N) and respond accordingly.")
+    else:
+        base = _read(group["baseline"], "Provide a sensible, neutral, concise answer.")
 
-def persona_block(persona: Dict[str, int], guidance: Optional[str]) -> str:
-    block = {"persona": persona}
-    if guidance: block["guidance"] = guidance
-    return json.dumps(block, ensure_ascii=False)
+    return _inject_persona(base, persona)
 
 async def _call_openai(system_prompt: str, user_prompt: str) -> dict:
     if _client is None:
@@ -114,7 +138,8 @@ CONDITION_ORDER = ["baseline", "mirror", "comp", "creative"]
 
 async def generate_four(personas: list[dict], participant_id: str, task_id: str, style: str, prompt_text: str):
     async def one(cond: str, persona_payload: dict):
-        sys_prompt = system_prompt_for(style, cond)
+        persona_dict = persona_payload.get("persona") if persona_payload else None
+        sys_prompt = system_prompt_for(style, cond, persona_dict)
 
         key = cache.make_key(participant_id, task_id, cond)
         cached = await cache.get(key)
@@ -122,8 +147,7 @@ async def generate_four(personas: list[dict], participant_id: str, task_id: str,
             data = json.loads(cached)
             return data | {"fromCache": True}
 
-        pblock = "" if cond == "baseline" else persona_block(persona_payload["persona"], persona_payload.get("guidance"))
-        user_msg = f"{prompt_text}\n\n{pblock}" if pblock else prompt_text
+        user_msg = prompt_text
 
         with timer_ms() as t:
             llm = await _call_openai(sys_prompt, user_msg)
