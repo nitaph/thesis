@@ -1,7 +1,8 @@
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy import Integer, String, Text, ForeignKey, DateTime
 from sqlalchemy.sql import func
-from app.db import Base
+from .db import Base
+from datetime import datetime
 
 class Participant(Base):
     __tablename__ = "participants"
@@ -17,7 +18,7 @@ class Big5Score(Base):
     E: Mapped[int] = mapped_column(Integer)
     A: Mapped[int] = mapped_column(Integer)
     N: Mapped[int] = mapped_column(Integer)
-    created_at: Mapped[str] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 class Task(Base):
     __tablename__ = "tasks"
